@@ -248,6 +248,8 @@ typedef NS_ENUM(NSInteger, CHCSVErrorCode) {
 
 @interface CHCSVWriter : NSObject
 
+@property (copy) NSString *characterNewLine;
+
 /**
  * This method is unavailable, because there is no way to extract the written CSV.
  */
@@ -283,6 +285,17 @@ typedef NS_ENUM(NSInteger, CHCSVErrorCode) {
  *  If you provide an object that is not an @c NSString, its @c description will be written to the stream.
  */
 - (void)writeField:(id)field;
+
+/**
+ *  Write a field to the output stream
+ *
+ *  If necessary, this will also write a delimiter to the stream as well. This method takes care of all escaping.
+ *
+ *  @param field The object to be written to the stream
+ *  If you provide an object that is not an @c NSString, its @c description will be written to the stream.
+ *  @param maxSize Limit maximum field length
+ */
+- (void)writeField:(NSString *)field maxSize:(NSUInteger)maxSize;
 
 /**
  *  Write a newline character to the output stream

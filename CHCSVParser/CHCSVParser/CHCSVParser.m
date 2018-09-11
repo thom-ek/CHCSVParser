@@ -607,6 +607,8 @@ NSString *const CHCSVErrorDomain = @"com.davedelong.csv";
             _delimiter = delimiterData;
         }
         
+        _characterNewLine = @"\n";
+        
         NSMutableCharacterSet *illegalCharacters = [[NSCharacterSet newlineCharacterSet] mutableCopy];
         [illegalCharacters addCharactersInString:delimiterString];
         [illegalCharacters addCharactersInString:@"\""];
@@ -641,6 +643,10 @@ NSString *const CHCSVErrorDomain = @"com.davedelong.csv";
 }
 
 - (void)writeField:(id)field {
+    [self writeField:field maxSize:NSUIntegerMax];
+}
+
+- (void)writeField:(id)field maxSize:(NSUInteger)maxSize{
     if (_currentField > 0) {
         [self _writeDelimiter];
     }
@@ -650,6 +656,10 @@ NSString *const CHCSVErrorDomain = @"com.davedelong.csv";
     }
     
     NSString *string = field ? [field description] : @"";
+    
+    if(maxSize != NSUIntegerMax && string.length > maxSize) {
+        string = [string substringToIndex:maxSize];
+    }
     
     if ([string rangeOfCharacterFromSet:_illegalCharacters].location != NSNotFound) {
         // replace double quotes with double double quotes
@@ -662,7 +672,7 @@ NSString *const CHCSVErrorDomain = @"com.davedelong.csv";
 }
 
 - (void)finishLine {
-    [self _writeString:@"\n"];
+    [self _writeString:_characterNewLine];
     _currentField = 0;
     _currentLine++;
 }
@@ -701,7 +711,7 @@ NSString *const CHCSVErrorDomain = @"com.davedelong.csv";
     
     NSArray *lines = [comment componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
     for (NSString *line in lines) {
-        NSString *commented = [NSString stringWithFormat:@"#%@\n", line];
+        NSString *commented = [NSString stringWithFormat:@"#%@%@", line, _characterNewLine];
         [self _writeString:commented];
     }
 }
