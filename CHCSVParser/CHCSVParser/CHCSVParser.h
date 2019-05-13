@@ -246,6 +246,17 @@ typedef NS_ENUM(NSInteger, CHCSVErrorCode) {
 
 @end
 
+typedef NS_OPTIONS(NSUInteger, CHCSVWriterOptions) {
+    /**
+     * Quote non-number fields.
+     */
+    CHCSVWriterOptionsQuoteNonNumberFields = 1 << 0,
+    /**
+     * Quote number fields.
+     */
+    CHCSVWriterOptionsQuoteNumberFields = 1 << 1
+};
+
 @interface CHCSVWriter : NSObject
 
 @property (copy) NSString *characterNewLine;
@@ -274,7 +285,19 @@ typedef NS_ENUM(NSInteger, CHCSVErrorCode) {
  *
  *  @return a @c CHCSVWriter instance, or @c nil if initialization failed
  */
-- (instancetype)initWithOutputStream:(NSOutputStream *)stream encoding:(NSStringEncoding)encoding delimiter:(unichar)delimiter NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithOutputStream:(NSOutputStream *)stream encoding:(NSStringEncoding)encoding delimiter:(unichar)delimiter;
+
+/**
+ *  The designated initializer
+ *
+ *  @param stream    The @c NSOutputStream to which bytes will be written.
+ *  If you wish to append to an existing file, you can provide an @c NSOutputStream that is set to append to the target file
+ *  @param encoding  The byte encoding to use when writing strings to the stream
+ *  @param delimiter The field delimiter to use during writing
+ *  @param options A bitwise-OR of @c CHCSVWriterOptions to control how writing should occur
+ *  @return a @c CHCSVWriter instance, or @c nil if initialization failed
+ */
+- (instancetype)initWithOutputStream:(NSOutputStream *)stream encoding:(NSStringEncoding)encoding options:(CHCSVWriterOptions)options delimiter:(unichar)delimiter NS_DESIGNATED_INITIALIZER;
 
 /**
  *  Write a field to the output stream
@@ -379,7 +402,15 @@ typedef NS_OPTIONS(NSUInteger, CHCSVParserOptions) {
      *  @see CHCSVParser.recognizesLeadingEqualSign
      *  @link http://edoceo.com/utilitas/csv-file-format
      */
-    CHCSVParserOptionsRecognizesLeadingEqualSign = 1 << 5
+    CHCSVParserOptionsRecognizesLeadingEqualSign = 1 << 5,
+    /**
+     * Quote non-number fields.
+     */
+    CHCSVParserOptionsQuoteNonNumberFields = 1 << 6,
+    /**
+     * Quote non-number fields.
+     */
+    CHCSVParserOptionsQuoteNumberFields = 1 << 7
 };
 
 /**

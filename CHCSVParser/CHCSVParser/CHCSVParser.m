@@ -582,6 +582,9 @@ NSString *const CHCSVErrorDomain = @"com.davedelong.csv";
     NSUInteger _currentLine;
     NSUInteger _currentField;
     NSMutableArray *_firstLineKeys;
+    
+    BOOL _quoteNumberFields;
+    BOOL _quoteNonNumberFields;
 }
 
 - (instancetype)initForWritingToCSVFile:(NSString *)path {
@@ -590,6 +593,10 @@ NSString *const CHCSVErrorDomain = @"com.davedelong.csv";
 }
 
 - (instancetype)initWithOutputStream:(NSOutputStream *)stream encoding:(NSStringEncoding)encoding delimiter:(unichar)delimiter {
+    return [self initWithOutputStream:stream encoding:encoding options:0 delimiter:delimiter];
+}
+
+- (instancetype)initWithOutputStream:(NSOutputStream *)stream encoding:(NSStringEncoding)encoding options:(CHCSVWriterOptions)options delimiter:(unichar)delimiter {
     self = [super init];
     if (self) {
         _stream = stream;
@@ -623,6 +630,9 @@ NSString *const CHCSVErrorDomain = @"com.davedelong.csv";
         _illegalCharacters = [illegalCharacters copy];
         
         _firstLineKeys = [NSMutableArray array];
+        
+        _quoteNumberFields = !!(options & CHCSVWriterOptionsQuoteNumberFields);
+        _quoteNonNumberFields = !!(options & CHCSVWriterOptionsQuoteNonNumberFields);
     }
     return self;
 }
@@ -669,7 +679,15 @@ NSString *const CHCSVErrorDomain = @"com.davedelong.csv";
         string = [string substringToIndex:maxSize];
     }
     
-    if ([string rangeOfCharacterFromSet:_illegalCharacters].location != NSNotFound) {
+    BOOL quote = NO;
+    if(_quoteNonNumberFields && ![field isKindOfClass:[NSNumber class]]) {
+        quote = YES;
+    }
+    if(_quoteNumberFields && [field isKindOfClass:[NSNumber class]]) {
+        quote = YES;
+    }
+
+    if (quote || [string rangeOfCharacterFromSet:_illegalCharacters].location != NSNotFound) {
         // replace double quotes with double double quotes
         string = [string stringByReplacingOccurrencesOfString:@"\"" withString:@"\"\""];
         // surround in double quotes
@@ -792,7 +810,6 @@ NSString *const CHCSVErrorDomain = @"com.davedelong.csv";
 
 @end
 
-NSArray *_CHCSVParserParse(NSInputStream *inputStream, CHCSVParserOptions options, unichar delimiter, NSError *__autoreleasing *error);
 NSArray *_CHCSVParserParse(NSInputStream *inputStream, CHCSVParserOptions options, unichar delimiter, NSError *__autoreleasing *error) {
     CHCSVParser *parser = [[CHCSVParser alloc] initWithInputStream:inputStream usedEncoding:nil delimiter:delimiter];
     
