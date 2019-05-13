@@ -584,7 +584,8 @@ NSString *const CHCSVErrorDomain = @"com.davedelong.csv";
     NSMutableArray *_firstLineKeys;
     
     BOOL _quoteNumberFields;
-    BOOL _quoteNonNumberFields;
+    BOOL _quoteStringFields;
+    BOOL _quoteDateFields;
 }
 
 - (instancetype)initForWritingToCSVFile:(NSString *)path {
@@ -631,8 +632,9 @@ NSString *const CHCSVErrorDomain = @"com.davedelong.csv";
         
         _firstLineKeys = [NSMutableArray array];
         
+        _quoteStringFields = !!(options & CHCSVWriterOptionsQuoteStringFields);
         _quoteNumberFields = !!(options & CHCSVWriterOptionsQuoteNumberFields);
-        _quoteNonNumberFields = !!(options & CHCSVWriterOptionsQuoteNonNumberFields);
+        _quoteDateFields = !!(options & CHCSVWriterOptionsQuoteDateFields);
     }
     return self;
 }
@@ -660,6 +662,13 @@ NSString *const CHCSVErrorDomain = @"com.davedelong.csv";
     [self _writeData:_delimiter];
 }
 
+- (void)writeRawField:(id)field {
+    NSString *string = field ? [field description] : @"";
+    
+    [self _writeString:string];
+    _currentField++;
+}
+
 - (void)writeField:(id)field {
     [self writeField:field maxSize:NSUIntegerMax];
 }
@@ -673,18 +682,38 @@ NSString *const CHCSVErrorDomain = @"com.davedelong.csv";
         [_firstLineKeys addObject:field];
     }
     
-    NSString *string = field ? [field description] : @"";
+    BOOL quote = NO;
+    NSString *string;
+    if(field && _decimalNumberFormatter && [field isKindOfClass:[NSDecimalNumber class]]) {
+        string = [_decimalNumberFormatter stringFromNumber:field];
+        if(_quoteNumberFields) {
+            quote = YES;
+        }
+    }
+    else if(field && _numberFormatter && [field isKindOfClass:[NSNumber class]] && ![field isKindOfClass:[NSDecimalNumber class]]) {
+        string = [_numberFormatter stringFromNumber:field];
+        if(_quoteNumberFields) {
+            quote = YES;
+        }
+    }
+    else if(field && _dateFormatter && [field isKindOfClass:[NSDate class]]) {
+        string = [_dateFormatter stringFromDate:field];
+        if(_quoteDateFields) {
+            quote = YES;
+        }
+    }
+    else {
+        string = field ? [field description] : @"";
+        if((_quoteNumberFields && [field isKindOfClass:[NSNumber class]]) ||
+           (_quoteDateFields && [field isKindOfClass:[NSDate class]]) ||
+           (_quoteStringFields && [field isKindOfClass:[NSString class]] && string.length > 0)
+           ) {
+            quote = YES;
+        }
+    }
     
     if(maxSize != NSUIntegerMax && string.length > maxSize) {
         string = [string substringToIndex:maxSize];
-    }
-    
-    BOOL quote = NO;
-    if(_quoteNonNumberFields && ![field isKindOfClass:[NSNumber class]]) {
-        quote = YES;
-    }
-    if(_quoteNumberFields && [field isKindOfClass:[NSNumber class]]) {
-        quote = YES;
     }
 
     if (quote || [string rangeOfCharacterFromSet:_illegalCharacters].location != NSNotFound) {

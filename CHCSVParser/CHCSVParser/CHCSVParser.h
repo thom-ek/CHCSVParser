@@ -248,18 +248,25 @@ typedef NS_ENUM(NSInteger, CHCSVErrorCode) {
 
 typedef NS_OPTIONS(NSUInteger, CHCSVWriterOptions) {
     /**
-     * Quote non-number fields.
+     * Quote string fields.
      */
-    CHCSVWriterOptionsQuoteNonNumberFields = 1 << 0,
+    CHCSVWriterOptionsQuoteStringFields = 1 << 0,
+    /**
+     * Quote date fields.
+     */
+    CHCSVWriterOptionsQuoteDateFields = 1 << 1,
     /**
      * Quote number fields.
      */
-    CHCSVWriterOptionsQuoteNumberFields = 1 << 1
+    CHCSVWriterOptionsQuoteNumberFields = 1 << 2
 };
 
 @interface CHCSVWriter : NSObject
 
-@property (copy) NSString *characterNewLine;
+@property (nonatomic, copy) NSString *characterNewLine;
+@property (nonatomic, strong) NSNumberFormatter *numberFormatter;
+@property (nonatomic, strong) NSNumberFormatter *decimalNumberFormatter;
+@property (nonatomic, strong) NSDateFormatter *dateFormatter;
 
 /**
  * This method is unavailable, because there is no way to extract the written CSV.
@@ -298,6 +305,16 @@ typedef NS_OPTIONS(NSUInteger, CHCSVWriterOptions) {
  *  @return a @c CHCSVWriter instance, or @c nil if initialization failed
  */
 - (instancetype)initWithOutputStream:(NSOutputStream *)stream encoding:(NSStringEncoding)encoding options:(CHCSVWriterOptions)options delimiter:(unichar)delimiter NS_DESIGNATED_INITIALIZER;
+
+/**
+ *  Write a raw field to the output stream
+ *
+ *  This method takes care of all escaping.
+ *
+ *  @param field The object to be written to the stream
+ *  If you provide an object that is not an @c NSString, its @c description will be written to the stream.
+ */
+- (void)writeRawField:(id)field;
 
 /**
  *  Write a field to the output stream
